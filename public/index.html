@@ -1,29 +1,196 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>بحث عن الحساب</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --primary-color: #4a6fa5;
+      --secondary-color: #166088;
+      --accent-color: #4fc3f7;
+      --text-color: #333;
+      --light-bg: #f5f7fa;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light-bg);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    h2 {
+      color: var(--secondary-color);
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    #searchId {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    #searchId:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+    
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    #result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      display: none;
+    }
+    
+    .user-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .user-info {
+      margin-bottom: 10px;
+    }
+    
+    .info-label {
+      font-weight: bold;
+      color: var(--secondary-color);
+    }
+    
+    .rating {
+      color: #ff9800;
+      font-weight: bold;
+    }
+    
+    .error {
+      color: #e53935;
+      text-align: center;
+      padding: 10px;
+    }
+    
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .search-box {
+        flex-direction: column;
+      }
+      
+      .user-card {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>بحث عن الحساب عبر ID</h2>
-  <input type="text" id="searchId" placeholder="أدخل ID">
-  <button onclick="fetchData()">بحث</button>
-  <div id="result"></div>
+  <div class="container">
+    <h2>بحث عن الحساب</h2>
+    
+    <div class="search-box">
+      <input type="text" id="searchId" placeholder="أدخل رقم ID للبحث">
+      <button onclick="fetchData()">بحث</button>
+    </div>
+    
+    <div id="result">
+      <div class="user-card">
+        <div class="user-info">
+          <span class="info-label">رقم ID:</span>
+          <span id="userId"></span>
+        </div>
+        <div class="user-info">
+          <span class="info-label">الاسم:</span>
+          <span id="userName"></span>
+        </div>
+        <div class="user-info">
+          <span class="info-label">التقييم:</span>
+          <span id="userRating" class="rating"></span>
+        </div>
+        <div class="user-info">
+          <span class="info-label">التصنيف:</span>
+          <span id="userCategory"></span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     async function fetchData() {
-      const id = document.getElementById('searchId').value;
-      const res = await fetch('/api/user/' + id);
-      const data = await res.json();
-      if (data.error) {
-        document.getElementById('result').innerText = data.error;
-      } else {
-        document.getElementById('result').innerHTML = 
-          '<p>الاسم: ' + data.name + '</p>' +
-          '<p>التصنيف: ' + data.category + '</p>';
+      const id = document.getElementById('searchId').value.trim();
+      const resultDiv = document.getElementById('result');
+      
+      if (!id) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div class="error">الرجاء إدخال رقم ID للبحث</div>';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/user/' + id);
+        const data = await res.json();
+        
+        if (data.error) {
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = '<div class="error">' + data.error + '</div>';
+        } else {
+          document.getElementById('userId').textContent = id;
+          document.getElementById('userName').textContent = data.name || 'غير متوفر';
+          document.getElementById('userRating').textContent = data.rating ? data.rating + ' ★' : 'غير متوفر';
+          document.getElementById('userCategory').textContent = data.category || 'غير متوفر';
+          resultDiv.style.display = 'block';
+        }
+      } catch (error) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div class="error">حدث خطأ أثناء جلب البيانات</div>';
+        console.error('Error:', error);
       }
     }
+    
+    // Allow search on Enter key press
+    document.getElementById('searchId').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        fetchData();
+      }
+    });
   </script>
 </body>
 </html>
