@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(session({
-  secret: 'secret123',
+  secret: 'NP1uQVtvZVtTUvmsDT5govhW498HTSW0owdS22RkGW8=',
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 ساعة
