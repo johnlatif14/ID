@@ -459,17 +459,12 @@
   </div>
 
   <script>
-    // بيانات وهمية للأغراض التوضيحية
-    let users = [
-      { id: '51287676780', name: 'M8N', rating: 'ACE', category: '500' },
-    ];
-    
     // متغير لتخزين ID المستخدم المحدد للحذف
     let selectedUserIdForDelete = null;
     
-    // عند تحميل الصفحة، عرض جميع المستخدمين
+    // عند تحميل الصفحة، جلب جميع المستخدمين من الخادم
     document.addEventListener('DOMContentLoaded', function() {
-      renderUsersTable(users);
+      fetchUsers();
     });
     
     // تسجيل الخروج
@@ -477,6 +472,17 @@
       fetch('/logout')
         .then(response => window.location.href = '/login.html')
         .catch(error => console.error('Error:', error));
+    }
+    
+    // جلب جميع المستخدمين من الخادم
+    function fetchUsers() {
+      fetch('/api/users')
+        .then(response => response.json())
+        .then(data => renderUsersTable(data))
+        .catch(error => {
+          console.error('Error:', error);
+          showStatus('حدث خطأ أثناء جلب البيانات', 'error');
+        });
     }
     
     // عرض المستخدمين في الجدول
@@ -510,33 +516,38 @@
     
     // بحث عن مستخدم
     function searchUser() {
-      const searchTerm = document.getElementById('searchUser').value.toLowerCase();
+      const searchTerm = document.getElementById('searchUser').value;
       
       if (!searchTerm) {
-        renderUsersTable(users);
+        fetchUsers();
         return;
       }
       
-      const filteredUsers = users.filter(user => 
-        user.id.includes(searchTerm) || 
-        user.name.toLowerCase().includes(searchTerm)
-      );
-      
-      renderUsersTable(filteredUsers);
+      fetch(`/api/users/search?q=${encodeURIComponent(searchTerm)}`)
+        .then(response => response.json())
+        .then(data => renderUsersTable(data))
+        .catch(error => {
+          console.error('Error:', error);
+          showStatus('حدث خطأ أثناء البحث', 'error');
+        });
     }
     
     // تحميل بيانات مستخدم في النموذج
     function loadUserData(userId) {
-      const user = users.find(u => u.id === userId);
-      
-      if (user) {
-        document.getElementById('userId').value = user.id;
-        document.getElementById('userName').value = user.name;
-        document.getElementById('userRating').value = user.rating;
-        document.getElementById('userCategory').value = user.category;
-        
-        showStatus('تم تحميل بيانات المستخدم', 'success');
-      }
+      fetch(`/api/users/${userId}`)
+        .then(response => response.json())
+        .then(user => {
+          document.getElementById('userId').value = user.id;
+          document.getElementById('userName').value = user.name;
+          document.getElementById('userRating').value = user.rating;
+          document.getElementById('userCategory').value = user.category;
+          
+          showStatus('تم تحميل بيانات المستخدم', 'success');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showStatus('لم يتم العثور على المستخدم', 'error');
+        });
     }
     
     // إضافة مستخدم جديد
@@ -557,23 +568,27 @@
         return;
       }
       
-      // التحقق من عدم وجود ID مكرر
-      if (users.some(u => u.id === id)) {
-        showStatus('رقم ID موجود مسبقاً', 'error');
-        return;
-      }
-      
-      const newUser = {
-        id,
-        name,
-        rating,
-        category
-      };
-      
-      users.push(newUser);
-      renderUsersTable(users);
-      clearForm();
-      showStatus('تمت إضافة المستخدم بنجاح', 'success');
+      fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, name, rating, category }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          showStatus(data.message, 'success');
+          clearForm();
+          fetchUsers();
+        } else {
+          showStatus('حدث خطأ أثناء الإضافة', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showStatus('حدث خطأ أثناء الإضافة', 'error');
+      });
     }
     
     // تحديث بيانات مستخدم
@@ -594,22 +609,26 @@
         return;
       }
       
-      const userIndex = users.findIndex(u => u.id === id);
-      
-      if (userIndex === -1) {
-        showStatus('لم يتم العثور على المستخدم', 'error');
-        return;
-      }
-      
-      users[userIndex] = {
-        id,
-        name,
-        rating,
-        category
-      };
-      
-      renderUsersTable(users);
-      showStatus('تم تحديث بيانات المستخدم بنجاح', 'success');
+      fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, rating, category }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          showStatus(data.message, 'success');
+          fetchUsers();
+        } else {
+          showStatus('حدث خطأ أثناء التحديث', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showStatus('حدث خطأ أثناء التحديث', 'error');
+      });
     }
     
     // تحضير لحذف مستخدم
@@ -619,18 +638,42 @@
     }
     
     // تأكيد حذف مستخدم
+    function confirmDelete() {
+      const id = document.getElementById('userId').value.trim();
+      if (!id) {
+        showStatus('الرجاء إدخال ID المستخدم أولاً', 'error');
+        return;
+      }
+      prepareDelete(id);
+    }
+    
+    // تنفيذ حذف مستخدم
     function deleteUser() {
       if (!selectedUserIdForDelete) return;
       
-      users = users.filter(u => u.id !== selectedUserIdForDelete);
-      renderUsersTable(users);
-      closeModal();
+      fetch(`/api/users/${selectedUserIdForDelete}`, {
+        method: 'DELETE',
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          showStatus(data.message, 'success');
+          closeModal();
+          
+          if (document.getElementById('userId').value === selectedUserIdForDelete) {
+            clearForm();
+          }
+          
+          fetchUsers();
+        } else {
+          showStatus('حدث خطأ أثناء الحذف', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showStatus('حدث خطأ أثناء الحذف', 'error');
+      });
       
-      if (document.getElementById('userId').value === selectedUserIdForDelete) {
-        clearForm();
-      }
-      
-      showStatus('تم حذف المستخدم بنجاح', 'success');
       selectedUserIdForDelete = null;
     }
     
@@ -658,6 +701,11 @@
         statusEl.className = 'status-message';
       }, 5000);
     }
+    
+    // البحث عند الضغط على Enter
+    document.getElementById('searchUser').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchUser();
+    });
   </script>
 </body>
 </html>

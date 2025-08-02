@@ -43,7 +43,16 @@
       margin-bottom: 20px;
     }
     
-    #searchId {
+    .search-type {
+      width: 120px;
+      padding: 12px 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: white;
+    }
+    
+    #searchInput {
       flex: 1;
       padding: 12px 15px;
       border: 2px solid #ddd;
@@ -51,7 +60,7 @@
       font-size: 16px;
     }
     
-    #searchId:focus {
+    #searchInput:focus {
       border-color: var(--primary-color);
       outline: none;
     }
@@ -118,27 +127,60 @@
     <h2>بحث عن الحساب</h2>
     
     <div class="search-box">
-      <input type="text" id="searchId" placeholder="أدخل رقم ID للبحث">
+      <select id="searchType" class="search-type">
+        <option value="id">رقم ID</option>
+        <option value="name">الاسم</option>
+        <option value="email">البريد الإلكتروني</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="أدخل رقم ID للبحث">
       <button onclick="fetchData()">بحث</button>
     </div>
     
+
     <div id="result"></div>
   </div>
 
   <script>
+    // تحديث النص الموضعي عند تغيير نوع البحث
+    document.getElementById('searchType').addEventListener('change', function() {
+      const searchInput = document.getElementById('searchInput');
+      const searchType = this.value;
+      
+      switch(searchType) {
+        case 'id':
+          searchInput.placeholder = 'أدخل رقم ID للبحث';
+          break;
+        case 'name':
+          searchInput.placeholder = 'أدخل الاسم للبحث';
+          break;
+        case 'email':
+          searchInput.placeholder = 'أدخل البريد الإلكتروني للبحث';
+          break;
+      }
+    });
+
     async function fetchData() {
-      const id = document.getElementById('searchId').value.trim();
+      const searchType = document.getElementById('searchType').value;
+      const searchValue = document.getElementById('searchInput').value.trim();
       const resultDiv = document.getElementById('result');
       
-      if (!id) {
-        showError('الرجاء إدخال رقم ID للبحث');
+      if (!searchValue) {
+        showError('الرجاء إدخال قيمة للبحث');
         return;
       }
       
       showLoading('جاري البحث...');
       
       try {
-        const response = await fetch(`/api/users/${id}`);
+        // بناء URL بناءً على نوع البحث
+        let apiUrl = '/api/users/';
+        if (searchType === 'id') {
+          apiUrl += searchValue;
+        } else {
+          apiUrl += `search?${searchType}=${encodeURIComponent(searchValue)}`;
+        }
+        
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -178,6 +220,10 @@
             <span>${user.name || 'غير متوفر'}</span>
           </div>
           <div class="user-info">
+            <span class="info-label">البريد الإلكتروني:</span>
+            <span>${user.email || 'غير متوفر'}</span>
+          </div>
+          <div class="user-info">
             <span class="info-label">التقييم:</span>
             <span class="rating">${user.rating ? user.rating + ' ★' : 'غير متوفر'}</span>
           </div>
@@ -190,7 +236,7 @@
     }
 
     // البحث عند الضغط على Enter
-    document.getElementById('searchId').addEventListener('keypress', (e) => {
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') fetchData();
     });
   </script>
