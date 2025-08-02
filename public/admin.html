@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة تحكم الأدمن</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>تعديل تصنيف الحساب</h2>
+  <input type="text" id="userId" placeholder="ID الحساب">
+  <input type="text" id="newCategory" placeholder="التصنيف الجديد">
+  <button onclick="updateCategory()">تحديث</button>
+  <p id="status"></p>
+
+  <script>
+    async function updateCategory() {
+      const id = document.getElementById('userId').value;
+      const category = document.getElementById('newCategory').value;
+      const res = await fetch('/api/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id, category })
+      });
+      const data = await res.json();
+      document.getElementById('status').innerText = data.message;
+    }
+  </script>
+</body>
+</html>

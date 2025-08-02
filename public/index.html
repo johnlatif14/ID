@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>بحث عن الحساب</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>بحث عن الحساب عبر ID</h2>
+  <input type="text" id="searchId" placeholder="أدخل ID">
+  <button onclick="fetchData()">بحث</button>
+  <div id="result"></div>
+
+  <script>
+    async function fetchData() {
+      const id = document.getElementById('searchId').value;
+      const res = await fetch('/api/user/' + id);
+      const data = await res.json();
+      if (data.error) {
+        document.getElementById('result').innerText = data.error;
+      } else {
+        document.getElementById('result').innerHTML = 
+          '<p>الاسم: ' + data.name + '</p>' +
+          '<p>التصنيف: ' + data.category + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>
