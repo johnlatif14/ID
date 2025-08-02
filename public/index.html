@@ -105,6 +105,15 @@
       color: #e53935;
       text-align: center;
       padding: 10px;
+      background-color: #ffebee;
+      border-radius: 4px;
+      border: 1px solid #ef9a9a;
+    }
+    
+    .loading {
+      text-align: center;
+      color: var(--secondary-color);
+      font-style: italic;
     }
     
     @media (max-width: 480px) {
@@ -164,24 +173,41 @@
         return;
       }
       
+      // عرض رسالة تحميل
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<div class="loading">جاري البحث...</div>';
+      
       try {
         const res = await fetch('/api/user/' + id);
+        
+        // التحقق من حالة الاستجابة أولاً
+        if (!res.ok) {
+          throw new Error(`خطأ في الخادم: ${res.status}`);
+        }
+        
         const data = await res.json();
         
         if (data.error) {
-          resultDiv.style.display = 'block';
           resultDiv.innerHTML = '<div class="error">' + data.error + '</div>';
         } else {
           document.getElementById('userId').textContent = id;
           document.getElementById('userName').textContent = data.name || 'غير متوفر';
           document.getElementById('userRating').textContent = data.rating ? data.rating + ' ★' : 'غير متوفر';
           document.getElementById('userCategory').textContent = data.category || 'غير متوفر';
-          resultDiv.style.display = 'block';
         }
       } catch (error) {
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="error">حدث خطأ أثناء جلب البيانات</div>';
         console.error('Error:', error);
+        
+        let errorMessage = 'حدث خطأ أثناء جلب البيانات';
+        
+        // رسائل خطأ أكثر تحديداً
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'تعذر الاتصال بالخادم';
+        } else if (error.message.includes('خطأ في الخادم')) {
+          errorMessage = 'حدث خطأ في الخادم، الرجاء المحاولة لاحقاً';
+        }
+        
+        resultDiv.innerHTML = '<div class="error">' + errorMessage + '</div>';
       }
     }
     
