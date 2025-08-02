@@ -36,9 +36,9 @@ function saveData() {
 // تسجيل الدخول
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === 'admin' && password === 'admin123') {
+  if (username === 'john' && password === 'latif') {
     req.session.admin = true;
-    return res.json({ success: true, redirect: '/admin.html' });
+    return res.redirect('/admin.html');
   }
   res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
 });

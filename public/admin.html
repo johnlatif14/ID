@@ -320,6 +320,22 @@
       margin-top: 20px;
     }
     
+    /* أنماط جديدة للتقييم والتصنيف */
+    .rating-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    
+    .tag { background-color: #e3f2fd; color: #1976d2; }
+    .conquer { background-color: #e8f5e9; color: #2e7d32; }
+    
+    .category-value {
+      font-weight: bold;
+      color: #d81b60;
+    }
+    
     @media (max-width: 768px) {
       .dashboard {
         grid-template-columns: 1fr;
@@ -343,7 +359,7 @@
   <header>
     <div class="header-content">
       <div class="logo">لوحة التحكم الإدارية</div>
-      <button class="logout-btn">تسجيل خروج</button>
+      <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
     </div>
   </header>
   
@@ -381,17 +397,17 @@
           <div class="form-row">
             <div>
               <label for="userRating">التقييم</label>
-              <input type="text" id="userRating" placeholder="التقييم">
+              <select id="userRating">
+                <option value="">اختر نوع التقييم</option>
+                <option value="تاج">تاج</option>
+                <option value="كونكر">كونكر</option>
+                <option value="مبتدئ">مبتدئ</option>
+                <option value="محترف">محترف</option>
+              </select>
             </div>
             <div>
-              <label for="userCategory">التصنيف</label>
-              <select id="userCategory">
-                <option value="">اختر التصنيف</option>
-                <option value="مميز">مميز</option>
-                <option value="عادي">عادي</option>
-                <option value="جديد">جديد</option>
-                <option value="محظور">محظور</option>
-              </select>
+              <label for="userCategory">التصنيف (رقم)</label>
+              <input type="number" id="userCategory" placeholder="أدخل قيمة رقمية">
             </div>
           </div>
         </div>
@@ -441,10 +457,10 @@
   <script>
     // بيانات وهمية للأغراض التوضيحية
     let users = [
-      { id: '1001', name: 'أحمد محمد', rating: '4.5', category: 'مميز' },
-      { id: '1002', name: 'سارة علي', rating: '3.2', category: 'عادي' },
-      { id: '1003', name: 'خالد عبدالله', rating: '5.0', category: 'مميز' },
-      { id: '1004', name: 'نورا سعد', rating: '2.8', category: 'جديد' }
+      { id: '1001', name: 'أحمد محمد', rating: 'تاج', category: '200' },
+      { id: '1002', name: 'سارة علي', rating: 'كونكر', category: '150' },
+      { id: '1003', name: 'خالد عبدالله', rating: 'محترف', category: '300' },
+      { id: '1004', name: 'نورا سعد', rating: 'مبتدئ', category: '50' }
     ];
     
     // متغير لتخزين ID المستخدم المحدد للحذف
@@ -455,6 +471,13 @@
       renderUsersTable(users);
     });
     
+    // تسجيل الخروج
+    function logout() {
+      fetch('/logout')
+        .then(response => window.location.href = '/login.html')
+        .catch(error => console.error('Error:', error));
+    }
+    
     // عرض المستخدمين في الجدول
     function renderUsersTable(usersData) {
       const tbody = document.getElementById('usersList');
@@ -463,11 +486,15 @@
       usersData.forEach(user => {
         const row = document.createElement('tr');
         
+        // تحديد كلاس التقييم لعرضه بشكل مميز
+        const ratingClass = user.rating === 'تاج' ? 'tag' : 
+                          user.rating === 'كونكر' ? 'conquer' : '';
+        
         row.innerHTML = `
           <td>${user.id}</td>
           <td>${user.name}</td>
-          <td>${user.rating}</td>
-          <td>${user.category}</td>
+          <td><span class="rating-badge ${ratingClass}">${user.rating}</span></td>
+          <td><span class="category-value">${user.category}</span></td>
           <td>
             <div class="table-actions">
               <button class="btn btn-primary" onclick="loadUserData('${user.id}')">تعديل</button>
@@ -515,11 +542,17 @@
     function addUser() {
       const id = document.getElementById('userId').value.trim();
       const name = document.getElementById('userName').value.trim();
-      const rating = document.getElementById('userRating').value.trim();
-      const category = document.getElementById('userCategory').value;
+      const rating = document.getElementById('userRating').value;
+      const category = document.getElementById('userCategory').value.trim();
       
-      if (!id || !name || !category) {
+      if (!id || !name || !rating || !category) {
         showStatus('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+      }
+      
+      // التحقق من أن التصنيف رقم
+      if (isNaN(category)) {
+        showStatus('يجب أن يكون التصنيف قيمة رقمية', 'error');
         return;
       }
       
@@ -532,7 +565,7 @@
       const newUser = {
         id,
         name,
-        rating: rating || '0.0',
+        rating,
         category
       };
       
@@ -546,11 +579,17 @@
     function updateUser() {
       const id = document.getElementById('userId').value.trim();
       const name = document.getElementById('userName').value.trim();
-      const rating = document.getElementById('userRating').value.trim();
-      const category = document.getElementById('userCategory').value;
+      const rating = document.getElementById('userRating').value;
+      const category = document.getElementById('userCategory').value.trim();
       
-      if (!id || !name || !category) {
+      if (!id || !name || !rating || !category) {
         showStatus('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+      }
+      
+      // التحقق من أن التصنيف رقم
+      if (isNaN(category)) {
+        showStatus('يجب أن يكون التصنيف قيمة رقمية', 'error');
         return;
       }
       
@@ -564,7 +603,7 @@
       users[userIndex] = {
         id,
         name,
-        rating: rating || users[userIndex].rating,
+        rating,
         category
       };
       
