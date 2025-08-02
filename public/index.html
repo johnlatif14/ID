@@ -178,7 +178,8 @@
       resultDiv.innerHTML = '<div class="loading">جاري البحث...</div>';
       
       try {
-        const res = await fetch('/api/user/' + id);
+        const res = await fetch('/api/users/' + id);
+
         
         // التحقق من حالة الاستجابة أولاً
         if (!res.ok) {
