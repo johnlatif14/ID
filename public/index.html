@@ -35,7 +35,6 @@
       color: var(--secondary-color);
       text-align: center;
       margin-bottom: 25px;
-      font-size: 24px;
     }
     
     .search-box {
@@ -50,7 +49,6 @@
       border: 2px solid #ddd;
       border-radius: 6px;
       font-size: 16px;
-      transition: border-color 0.3s;
     }
     
     #searchId:focus {
@@ -66,7 +64,6 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 16px;
-      transition: background-color 0.3s;
     }
     
     button:hover {
@@ -107,27 +104,12 @@
       padding: 10px;
       background-color: #ffebee;
       border-radius: 4px;
-      border: 1px solid #ef9a9a;
     }
     
     .loading {
       text-align: center;
       color: var(--secondary-color);
       font-style: italic;
-    }
-    
-    @media (max-width: 480px) {
-      .container {
-        padding: 15px;
-      }
-      
-      .search-box {
-        flex-direction: column;
-      }
-      
-      .user-card {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -140,26 +122,7 @@
       <button onclick="fetchData()">بحث</button>
     </div>
     
-    <div id="result">
-      <div class="user-card">
-        <div class="user-info">
-          <span class="info-label">رقم ID:</span>
-          <span id="userId"></span>
-        </div>
-        <div class="user-info">
-          <span class="info-label">الاسم:</span>
-          <span id="userName"></span>
-        </div>
-        <div class="user-info">
-          <span class="info-label">التقييم:</span>
-          <span id="userRating" class="rating"></span>
-        </div>
-        <div class="user-info">
-          <span class="info-label">التصنيف:</span>
-          <span id="userCategory"></span>
-        </div>
-      </div>
-    </div>
+    <div id="result"></div>
   </div>
 
   <script>
@@ -168,55 +131,67 @@
       const resultDiv = document.getElementById('result');
       
       if (!id) {
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="error">الرجاء إدخال رقم ID للبحث</div>';
+        showError('الرجاء إدخال رقم ID للبحث');
         return;
       }
       
-      // عرض رسالة تحميل
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = '<div class="loading">جاري البحث...</div>';
+      showLoading('جاري البحث...');
       
       try {
-        const res = await fetch('/api/users/' + id);
-
+        const response = await fetch(`/api/users/${id}`);
         
-        // التحقق من حالة الاستجابة أولاً
-        if (!res.ok) {
-          throw new Error(`خطأ في الخادم: ${res.status}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'خطأ في الخادم');
         }
         
-        const data = await res.json();
-        
-        if (data.error) {
-          resultDiv.innerHTML = '<div class="error">' + data.error + '</div>';
-        } else {
-          document.getElementById('userId').textContent = id;
-          document.getElementById('userName').textContent = data.name || 'غير متوفر';
-          document.getElementById('userRating').textContent = data.rating ? data.rating + ' ★' : 'غير متوفر';
-          document.getElementById('userCategory').textContent = data.category || 'غير متوفر';
-        }
+        const user = await response.json();
+        showUserData(user);
       } catch (error) {
-        console.error('Error:', error);
-        
-        let errorMessage = 'حدث خطأ أثناء جلب البيانات';
-        
-        // رسائل خطأ أكثر تحديداً
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'تعذر الاتصال بالخادم';
-        } else if (error.message.includes('خطأ في الخادم')) {
-          errorMessage = 'حدث خطأ في الخادم، الرجاء المحاولة لاحقاً';
-        }
-        
-        resultDiv.innerHTML = '<div class="error">' + errorMessage + '</div>';
+        showError(error.message);
       }
     }
-    
-    // Allow search on Enter key press
-    document.getElementById('searchId').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        fetchData();
-      }
+
+    function showLoading(message) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `<div class="loading">${message}</div>`;
+    }
+
+    function showError(message) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showUserData(user) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `
+        <div class="user-card">
+          <div class="user-info">
+            <span class="info-label">رقم ID:</span>
+            <span>${user.id}</span>
+          </div>
+          <div class="user-info">
+            <span class="info-label">الاسم:</span>
+            <span>${user.name || 'غير متوفر'}</span>
+          </div>
+          <div class="user-info">
+            <span class="info-label">التقييم:</span>
+            <span class="rating">${user.rating ? user.rating + ' ★' : 'غير متوفر'}</span>
+          </div>
+          <div class="user-info">
+            <span class="info-label">التصنيف:</span>
+            <span>${user.category || 'غير متوفر'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // البحث عند الضغط على Enter
+    document.getElementById('searchId').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') fetchData();
     });
   </script>
 </body>
