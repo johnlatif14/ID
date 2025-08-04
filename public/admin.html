@@ -55,7 +55,7 @@
       font-weight: bold;
     }
     
-    .logout-btn {
+    .logout-btn, .search-btn {
       background-color: var(--danger-color);
       color: white;
       border: none;
@@ -67,6 +67,15 @@
     
     .logout-btn:hover {
       background-color: #c0392b;
+    }
+    
+    .search-btn {
+      background-color: var(--accent-color);
+      margin-left: 10px;
+    }
+    
+    .search-btn:hover {
+      background-color: #2980b9;
     }
     
     h2 {
@@ -228,7 +237,7 @@
     }
     
     .users-table th, .users-table td {
-      padding: 12px 15px;
+      padding: 12px 10px;
       text-align: right;
       border-bottom: 1px solid var(--border-color);
     }
@@ -320,7 +329,6 @@
       margin-top: 20px;
     }
     
-    /* أنماط جديدة للتقييم والتصنيف */
     .rating-badge {
       display: inline-block;
       padding: 3px 8px;
@@ -333,7 +341,85 @@
     
     .category-value {
       font-weight: bold;
+    }
+    
+    .percent-value {
       color: #d81b60;
+    }
+    
+    .number-value {
+      color: #1976d2;
+    }
+    
+    .text-value {
+      color: #6d4c41;
+      font-style: italic;
+    }
+    
+    .conquer-points {
+      font-weight: bold;
+      color: #8e24aa;
+    }
+    
+    .category-input-container {
+      position: relative;
+    }
+    
+    .category-type {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: #f5f5f5;
+      padding: 0 5px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* نافذة البحث */
+    .search-window {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 600px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: none;
+    }
+    
+    .search-window.red-frame {
+      border: 3px solid #e74c3c;
+    }
+    
+    .search-window.green-frame {
+      border: 3px solid #2ecc71;
+    }
+    
+    .search-window iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 5px;
+    }
+    
+    .close-search-window {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--danger-color);
+      color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
     }
     
     @media (max-width: 768px) {
@@ -352,6 +438,11 @@
       .table-actions {
         flex-direction: column;
       }
+      
+      .search-window {
+        width: 95%;
+        height: 80%;
+      }
     }
   </style>
 </head>
@@ -359,7 +450,10 @@
   <header>
     <div class="header-content">
       <div class="logo">لوحة التحكم الإدارية</div>
-      <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      <div>
+        <button class="search-btn" onclick="toggleSearchWindow()">عرض نافذة البحث</button>
+        <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      </div>
     </div>
   </header>
   
@@ -397,21 +491,21 @@
           <div class="form-row">
             <div>
               <label for="userRating">التقييم</label>
-              <select id="userRating">
-                <option value="">اختر نوع التقييم</option>
-                <option value="برونز">برونز</option>
-                <option value="فضة">فضة</option>
-                <option value="ضهب">ذهب</option>
-                <option value="بلاتينيوم">بلاتينيوم</option>
-                <option value="ماس">ماس</option>
-                <option value="تاج">تاج</option>
-                <option value="ايس(ACE)">ايس(ACE)</option>
-                <option value="كونكر">كوتكر</option>
-              </select>
+              <input type="text" id="userRating" placeholder="أدخل التقييم (مثال: برونز، فضة، ذهب...)">
             </div>
             <div>
-              <label for="userCategory">التصنيف (رقم)</label>
-              <input type="number" id="userCategory" placeholder="أدخل قيمة رقمية">
+              <label for="userCategory">التصنيف</label>
+              <div class="category-input-container">
+                <input type="text" id="userCategory" placeholder="أدخل رقم، نسبة مئوية أو نص (مثال: 50 أو 50% أو جيد)">
+                <span class="category-type">رقم/نسبة/نص</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div>
+              <label for="conquerPoints">النقاط المتبقية للكونكر</label>
+              <input type="text" id="conquerPoints" placeholder="عدد النقاط المتبقية أو أي نص آخر">
             </div>
           </div>
         </div>
@@ -432,6 +526,7 @@
               <th>الاسم</th>
               <th>التقييم</th>
               <th>التصنيف</th>
+              <th>النقاط للكونكر</th>
               <th>الإجراءات</th>
             </tr>
           </thead>
@@ -458,9 +553,16 @@
     </div>
   </div>
 
+  <!-- نافذة البحث -->
+  <div id="searchWindow" class="search-window red-frame">
+    <button class="close-search-window" onclick="closeSearchWindow()">×</button>
+    <iframe id="searchIframe" src="about:blank"></iframe>
+  </div>
+
   <script>
     // متغير لتخزين ID المستخدم المحدد للحذف
     let selectedUserIdForDelete = null;
+    let isRedFrame = true;
     
     // عند تحميل الصفحة، جلب جميع المستخدمين من الخادم
     document.addEventListener('DOMContentLoaded', function() {
@@ -497,11 +599,29 @@
         const ratingClass = user.rating === 'تاج' ? 'tag' : 
                           user.rating === 'كونكر' ? 'conquer' : '';
         
+        // تحديد نوع التصنيف لعرضه بشكل مناسب
+        let categoryClass = '';
+        let categoryDisplay = user.category || 'غير محدد';
+        
+        if (user.category && user.category.includes('%')) {
+          categoryClass = 'percent-value';
+        } else if (user.category && !isNaN(parseFloat(user.category))) {
+          categoryClass = 'number-value';
+        } else {
+          categoryClass = 'text-value';
+        }
+        
+        // عرض النقاط المتبقية للكونكر
+        const conquerPointsDisplay = user.conquerPoints ? 
+          `<span class="conquer-points">${user.conquerPoints}</span>` : 
+          '<span class="text-value">غير محدد</span>';
+        
         row.innerHTML = `
           <td>${user.id}</td>
-          <td>${user.name}</td>
-          <td><span class="rating-badge ${ratingClass}">${user.rating}</span></td>
-          <td><span class="category-value">${user.category}</span></td>
+          <td>${user.name || 'غير محدد'}</td>
+          <td><span class="rating-badge ${ratingClass}">${user.rating || 'غير محدد'}</span></td>
+          <td><span class="category-value ${categoryClass}">${categoryDisplay}</span></td>
+          <td>${conquerPointsDisplay}</td>
           <td>
             <div class="table-actions">
               <button class="btn btn-primary" onclick="loadUserData('${user.id}')">تعديل</button>
@@ -516,7 +636,7 @@
     
     // بحث عن مستخدم
     function searchUser() {
-      const searchTerm = document.getElementById('searchUser').value;
+      const searchTerm = document.getElementById('searchUser').value.trim();
       
       if (!searchTerm) {
         fetchUsers();
@@ -538,9 +658,10 @@
         .then(response => response.json())
         .then(user => {
           document.getElementById('userId').value = user.id;
-          document.getElementById('userName').value = user.name;
-          document.getElementById('userRating').value = user.rating;
-          document.getElementById('userCategory').value = user.category;
+          document.getElementById('userName').value = user.name || '';
+          document.getElementById('userRating').value = user.rating || '';
+          document.getElementById('userCategory').value = user.category || '';
+          document.getElementById('conquerPoints').value = user.conquerPoints || '';
           
           showStatus('تم تحميل بيانات المستخدم', 'success');
         })
@@ -554,17 +675,12 @@
     function addUser() {
       const id = document.getElementById('userId').value.trim();
       const name = document.getElementById('userName').value.trim();
-      const rating = document.getElementById('userRating').value;
+      const rating = document.getElementById('userRating').value.trim();
       const category = document.getElementById('userCategory').value.trim();
+      const conquerPoints = document.getElementById('conquerPoints').value.trim();
       
-      if (!id || !name || !rating || !category) {
+      if (!id || !name || !category) {
         showStatus('الرجاء ملء جميع الحقول المطلوبة', 'error');
-        return;
-      }
-      
-      // التحقق من أن التصنيف رقم
-      if (isNaN(category)) {
-        showStatus('يجب أن يكون التصنيف قيمة رقمية', 'error');
         return;
       }
       
@@ -573,7 +689,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id, name, rating, category }),
+        body: JSON.stringify({ id, name, rating, category, conquerPoints }),
       })
       .then(response => response.json())
       .then(data => {
@@ -595,17 +711,12 @@
     function updateUser() {
       const id = document.getElementById('userId').value.trim();
       const name = document.getElementById('userName').value.trim();
-      const rating = document.getElementById('userRating').value;
+      const rating = document.getElementById('userRating').value.trim();
       const category = document.getElementById('userCategory').value.trim();
+      const conquerPoints = document.getElementById('conquerPoints').value.trim();
       
-      if (!id || !name || !rating || !category) {
+      if (!id || !name || !category) {
         showStatus('الرجاء ملء جميع الحقول المطلوبة', 'error');
-        return;
-      }
-      
-      // التحقق من أن التصنيف رقم
-      if (isNaN(category)) {
-        showStatus('يجب أن يكون التصنيف قيمة رقمية', 'error');
         return;
       }
       
@@ -614,7 +725,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, rating, category }),
+        body: JSON.stringify({ name, rating, category, conquerPoints }),
       })
       .then(response => response.json())
       .then(data => {
@@ -689,6 +800,7 @@
       document.getElementById('userName').value = '';
       document.getElementById('userRating').value = '';
       document.getElementById('userCategory').value = '';
+      document.getElementById('conquerPoints').value = '';
     }
     
     // عرض رسالة حالة
@@ -706,6 +818,36 @@
     document.getElementById('searchUser').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchUser();
     });
+    
+    // عرض/إخفاء نافذة البحث
+    function toggleSearchWindow() {
+      const searchWindow = document.getElementById('searchWindow');
+      const searchIframe = document.getElementById('searchIframe');
+      
+      if (searchWindow.style.display === 'block') {
+        // تغيير لون الإطار عند النقر المتكرر
+        if (isRedFrame) {
+          searchWindow.classList.remove('red-frame');
+          searchWindow.classList.add('green-frame');
+          searchIframe.contentDocument?.body?.style?.backgroundColor = '#e8f5e9';
+        } else {
+          searchWindow.classList.remove('green-frame');
+          searchWindow.classList.add('red-frame');
+          searchIframe.contentDocument?.body?.style?.backgroundColor = '#ffebee';
+        }
+        isRedFrame = !isRedFrame;
+      } else {
+        // فتح النافذة لأول مرة
+        searchWindow.style.display = 'block';
+        searchIframe.src = 'search.html';
+      }
+    }
+    
+    // إغلاق نافذة البحث
+    function closeSearchWindow() {
+      document.getElementById('searchWindow').style.display = 'none';
+      isRedFrame = true; // إعادة تعيين اللون للأحمر عند الإغلاق
+    }
   </script>
 </body>
 </html>

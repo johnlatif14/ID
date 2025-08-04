@@ -77,20 +77,20 @@ app.get('/api/users/search', checkAdmin, (req, res) => {
   if (!q) return res.json(users);
   const filteredUsers = users.filter(user => 
     user.id.includes(q) || 
-    user.name.toLowerCase().includes(q.toLowerCase())
+    user.name?.toLowerCase().includes(q.toLowerCase())
   );
   res.json(filteredUsers);
 });
 
 app.post('/api/users', checkAdmin, (req, res) => {
-  const { id, name, rating, category } = req.body;
+  const { id, name, rating, category, conquerPoints } = req.body;
   if (!id || !name || !category) {
     return res.status(400).json({ message: 'جميع الحقول مطلوبة ما عدا التقييم' });
   }
   if (users.some(u => u.id === id)) {
     return res.status(400).json({ message: 'رقم ID موجود مسبقاً' });
   }
-  const newUser = { id, name, rating: rating || '0.0', category };
+  const newUser = { id, name, rating: rating || '0.0', category, conquerPoints };
   users.push(newUser);
   saveData();
   res.json({ message: 'تمت إضافة المستخدم بنجاح', user: newUser });
@@ -98,7 +98,7 @@ app.post('/api/users', checkAdmin, (req, res) => {
 
 app.put('/api/users/:id', checkAdmin, (req, res) => {
   const { id } = req.params;
-  const { name, rating, category } = req.body;
+  const { name, rating, category, conquerPoints } = req.body;
   const userIndex = users.findIndex(u => u.id === id);
   if (userIndex === -1) {
     return res.status(404).json({ message: 'المستخدم غير موجود' });
@@ -106,6 +106,7 @@ app.put('/api/users/:id', checkAdmin, (req, res) => {
   if (name) users[userIndex].name = name;
   if (rating) users[userIndex].rating = rating;
   if (category) users[userIndex].category = category;
+  if (conquerPoints) users[userIndex].conquerPoints = conquerPoints;
   saveData();
   res.json({ message: 'تم تحديث المستخدم بنجاح', user: users[userIndex] });
 });
@@ -124,6 +125,11 @@ app.delete('/api/users/:id', checkAdmin, (req, res) => {
 // Route لحماية الصفحات الإدارية
 app.get('/admin.html', checkAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Route لصفحة البحث
+app.get('/search.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // بدء الخادم
