@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بحث عن الحساب</title>
+  <title>بحث عن التصنيف بالID</title>
   <style>
     :root {
       --primary-color: #4a6fa5;
@@ -144,19 +144,11 @@
       color: #d81b60;
       font-weight: bold;
     }
-            .red-text {
-            color: red;
-            font-size: 32px;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 50px;
-            font-family: Arial, sans-serif;
-        }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>بحث عن الحساب</h2>
+    <h2>بحث عن التصنيف بالID</h2>
     
     <select id="idSelector" class="id-selector">
       <option value="">اختر رقم ID</option>
@@ -253,7 +245,6 @@
             <span class="remaining">${remainingToTop}</span>
           </div>
         </div>
-        <div class="red-text">وقفنا لعب</div>
         <div class="time-info">
           <div class="time-label">الوقت العالمي (UTC):</div>
           <div id="currentTime">${new Date().toUTCString()}</div>
