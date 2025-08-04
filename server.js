@@ -129,7 +129,7 @@ app.get('/admin.html', checkAdmin, (req, res) => {
 
 // Route لصفحة البحث
 app.get('/search.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 // بدء الخادم
