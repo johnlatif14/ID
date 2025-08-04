@@ -69,6 +69,33 @@
       background-color: #c0392b;
     }
     
+    .play-btn {
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-left: 10px;
+      font-family: 'Tajawal', sans-serif;
+    }
+    
+    .play-btn.green {
+      background-color: #2ecc71;
+    }
+    
+    .play-btn.red {
+      background-color: #e74c3c;
+    }
+    
+    .play-btn.green:hover {
+      background-color: #27ae60;
+    }
+    
+    .play-btn.red:hover {
+      background-color: #c0392b;
+    }
+    
     h2 {
       color: var(--primary-color);
       margin: 30px 0 20px;
@@ -368,6 +395,43 @@
       color: #666;
     }
     
+    /* نافذة البحث */
+    .search-window {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 600px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: none;
+    }
+    
+    .search-window iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 5px;
+    }
+    
+    .close-search-window {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--danger-color);
+      color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
     @media (max-width: 768px) {
       .dashboard {
         grid-template-columns: 1fr;
@@ -384,6 +448,20 @@
       .table-actions {
         flex-direction: column;
       }
+      
+      .search-window {
+        width: 95%;
+        height: 80%;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .play-btn, .logout-btn {
+        margin: 5px 0;
+      }
     }
   </style>
 </head>
@@ -391,7 +469,11 @@
   <header>
     <div class="header-content">
       <div class="logo">لوحة التحكم الإدارية</div>
-      <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      <div>
+        <button class="play-btn green" onclick="togglePlayStatus('start')">بدأنا اللعب</button>
+        <button class="play-btn red" onclick="togglePlayStatus('stop')">وقفنا اللعب</button>
+        <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      </div>
     </div>
   </header>
   
@@ -429,12 +511,13 @@
           <div class="form-row">
             <div>
               <label for="userRating">التقييم</label>
-              <input type="text" id="userRating" placeholder="أدخل التقييم">
+              <input type="text" id="userRating" placeholder="أدخل التقييم (مثال: برونز، فضة، ذهب...)">
             </div>
             <div>
               <label for="userCategory">التصنيف</label>
               <div class="category-input-container">
-                <input type="text" id="userCategory" placeholder="أدخل التصنيف">
+                <input type="text" id="userCategory" placeholder="أدخل رقم، نسبة مئوية أو نص (مثال: 50 أو 50% أو جيد)">
+                <span class="category-type">رقم/نسبة/نص</span>
               </div>
             </div>
           </div>
@@ -442,7 +525,7 @@
           <div class="form-row">
             <div>
               <label for="conquerPoints">النقاط المتبقية للكونكر</label>
-              <input type="number" id="conquerPoints" placeholder="عدد النقاط المتبقية">
+              <input type="text" id="conquerPoints" placeholder="عدد النقاط المتبقية أو أي نص آخر">
             </div>
           </div>
         </div>
@@ -451,9 +534,6 @@
           <button class="btn btn-success" onclick="addUser()">إضافة مستخدم</button>
           <button class="btn btn-primary" onclick="updateUser()">تحديث البيانات</button>
           <button class="btn btn-danger" onclick="confirmDelete()">حذف المستخدم</button>
-          <button class="btn btn-danger" onclick="lockGame()">🔒 قفلنا لعب</button>
-          <button class="btn btn-success" onclick="startGame()">🎮 بدأنا لعب</button>
-
         </div>
         
         <div id="statusMessage" class="status-message"></div>
@@ -493,9 +573,16 @@
     </div>
   </div>
 
+  <!-- نافذة البحث -->
+  <div id="searchWindow" class="search-window">
+    <button class="close-search-window" onclick="closeSearchWindow()">×</button>
+    <iframe id="searchIframe" src="about:blank"></iframe>
+  </div>
+
   <script>
     // متغير لتخزين ID المستخدم المحدد للحذف
     let selectedUserIdForDelete = null;
+    let isPlaying = false;
     
     // عند تحميل الصفحة، جلب جميع المستخدمين من الخادم
     document.addEventListener('DOMContentLoaded', function() {
@@ -675,29 +762,6 @@
       });
     }
     
-function lockGame() {
-  fetch('/api/game/lock', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(res => res.ok
-    ? showStatus('🚫 قفلنا اللعب خلاص يا كبير', 'error')
-    : showStatus('❌ فشل في قفل اللعب', 'error'))
-  .catch(() => showStatus('⚠️ السيرفر مطنشنا يا نجم', 'error'));
-}
-
-function startGame() {
-  fetch('/api/game/start', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(res => res.ok
-    ? showStatus('🎮 يلا نبدأ اللعب يا باشا 💥', 'success')
-    : showStatus('❌ معرفناش نبدأ اللعب', 'error'))
-  .catch(() => showStatus('⚠️ السيرفر بيكح 😅', 'error'));
-}
-
-
     // تحضير لحذف مستخدم
     function prepareDelete(userId) {
       selectedUserIdForDelete = userId;
@@ -770,11 +834,43 @@ function startGame() {
       }, 5000);
     }
     
+    // تغيير حالة اللعب
+    function togglePlayStatus(status) {
+      isPlaying = status === 'start';
+      const message = isPlaying ? 'بدأنا اللعب' : 'وقفنا اللعب';
+      const colorClass = isPlaying ? 'success' : 'error';
+      
+      // تحديث حالة اللعب في صفحة البحث إذا كانت مفتوحة
+      const searchIframe = document.getElementById('searchIframe');
+      if (searchIframe && searchIframe.contentWindow) {
+        searchIframe.contentWindow.postMessage({
+          type: 'playStatus',
+          isPlaying: isPlaying,
+          message: message,
+          colorClass: colorClass
+        }, '*');
+      }
+      
+      showStatus(message, colorClass);
+    }
+    
+    // فتح نافذة البحث
+    function openSearchWindow() {
+      const searchWindow = document.getElementById('searchWindow');
+      const searchIframe = document.getElementById('searchIframe');
+      searchWindow.style.display = 'block';
+      searchIframe.src = 'index.html';
+    }
+    
+    // إغلاق نافذة البحث
+    function closeSearchWindow() {
+      document.getElementById('searchWindow').style.display = 'none';
+    }
+    
     // البحث عند الضغط على Enter
     document.getElementById('searchUser').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchUser();
     });
-    
   </script>
 </body>
 </html>

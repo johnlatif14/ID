@@ -12,7 +12,7 @@
       --text-color: #333;
       --light-bg: #f5f7fa;
     }
-
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--light-bg);
@@ -21,7 +21,7 @@
       padding: 20px;
       line-height: 1.6;
     }
-
+    
     .container {
       max-width: 600px;
       margin: 0 auto;
@@ -30,19 +30,19 @@
       border-radius: 10px;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
-
+    
     h2 {
       color: var(--secondary-color);
       text-align: center;
       margin-bottom: 25px;
     }
-
+    
     .search-box {
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
     }
-
+    
     #searchInput {
       flex: 1;
       padding: 12px 15px;
@@ -50,12 +50,12 @@
       border-radius: 6px;
       font-size: 16px;
     }
-
+    
     #searchInput:focus {
       border-color: var(--primary-color);
       outline: none;
     }
-
+    
     button {
       background-color: var(--primary-color);
       color: white;
@@ -65,11 +65,11 @@
       cursor: pointer;
       font-size: 16px;
     }
-
+    
     button:hover {
       background-color: var(--secondary-color);
     }
-
+    
     #result {
       margin-top: 30px;
       padding: 20px;
@@ -77,27 +77,27 @@
       background-color: #f9f9f9;
       display: none;
     }
-
+    
     .user-card {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 15px;
     }
-
+    
     .user-info {
       margin-bottom: 10px;
     }
-
+    
     .info-label {
       font-weight: bold;
       color: var(--secondary-color);
     }
-
+    
     .rating {
       color: #ff9800;
       font-weight: bold;
     }
-
+    
     .error {
       color: #e53935;
       text-align: center;
@@ -105,13 +105,13 @@
       background-color: #ffebee;
       border-radius: 4px;
     }
-
+    
     .loading {
       text-align: center;
       color: var(--secondary-color);
       font-style: italic;
     }
-
+    
     .id-selector {
       width: 100%;
       padding: 12px 15px;
@@ -120,7 +120,7 @@
       font-size: 16px;
       margin-bottom: 20px;
     }
-
+    
     .time-info {
       margin-top: 20px;
       padding: 15px;
@@ -128,57 +128,83 @@
       border-radius: 8px;
       text-align: center;
     }
-
+    
     .time-label {
       font-weight: bold;
       color: var(--secondary-color);
       margin-bottom: 5px;
     }
-
+    
     .remaining {
       color: #4caf50;
       font-weight: bold;
     }
-
+    
     .countdown {
       color: #d81b60;
       font-weight: bold;
     }
-
-    .control-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
+    
+    .play-status {
       margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+    }
+    
+    .play-status.playing {
+      background-color: #e8f5e9;
+      color: #2ecc71;
+      border: 2px solid #2ecc71;
+    }
+    
+    .play-status.stopped {
+      background-color: #ffebee;
+      color: #e74c3c;
+      border: 2px solid #e74c3c;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>بحث عن الحساب</h2>
-
+    
+    <div id="playStatus" class="play-status"></div>
+    
     <select id="idSelector" class="id-selector">
       <option value="">اختر رقم ID</option>
       <option value="51287676780">51287676780</option>
     </select>
-
+    
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="أدخل رقم ID للبحث" readonly>
       <button onclick="fetchData()">بحث</button>
     </div>
-
-    <!-- ✅ زرارين جدد مضافين هنا -->
-    <div class="control-buttons">
-      <button class="btn btn-danger" onclick="lockGame()">🔒 قفلنا لعب</button>
-      <button class="btn btn-success" onclick="startGame()">🎮 بدأنا لعب</button>
-    </div>
-
+    
     <div id="result"></div>
   </div>
 
   <script>
-    document.getElementById('idSelector').addEventListener('change', function () {
+    // استقبال رسائل حالة اللعب من لوحة التحكم
+    window.addEventListener('message', function(event) {
+      if (event.data.type === 'playStatus') {
+        const playStatusEl = document.getElementById('playStatus');
+        
+        playStatusEl.style.display = 'block';
+        playStatusEl.textContent = event.data.message;
+        
+        if (event.data.isPlaying) {
+          playStatusEl.className = 'play-status playing';
+        } else {
+          playStatusEl.className = 'play-status stopped';
+        }
+      }
+    });
+
+    // تحديث حقل البحث عند اختيار ID من القائمة
+    document.getElementById('idSelector').addEventListener('change', function() {
       const searchInput = document.getElementById('searchInput');
       searchInput.value = this.value;
     });
@@ -186,23 +212,23 @@
     async function fetchData() {
       const searchValue = document.getElementById('searchInput').value.trim();
       const resultDiv = document.getElementById('result');
-
+      
       if (!searchValue) {
         showError('الرجاء اختيار رقم ID من القائمة');
         return;
       }
-
+      
       showLoading('جاري البحث...');
-
+      
       try {
         const apiUrl = `/api/users/${searchValue}`;
         const response = await fetch(apiUrl);
-
+        
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'خطأ في الخادم');
         }
-
+        
         const user = await response.json();
         showUserData(user);
       } catch (error) {
@@ -224,9 +250,11 @@
 
     function showUserData(user) {
       const resultDiv = document.getElementById('result');
+      
+      // حساب المتبقي للوصول إلى التصنيف 500
       const currentRank = user.category ? parseInt(user.category) : 0;
       const remainingToTop = currentRank > 0 ? Math.max(0, currentRank - 500) : 0;
-
+      
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = `
         <div class="user-card">
@@ -262,7 +290,8 @@
           <div id="countdown" class="countdown"></div>
         </div>
       `;
-
+      
+      // تحديث الوقت والعد التنازلي
       updateTime();
       setInterval(updateTime, 1000);
     }
@@ -270,45 +299,24 @@
     function updateTime() {
       const now = new Date();
       document.getElementById('currentTime').textContent = now.toUTCString();
-
+      
+      // حساب الوقت المتبقي حتى منتصف الليل (UTC)
       const midnight = new Date();
       midnight.setUTCHours(24, 0, 0, 0);
-
+      
       const diff = midnight - now;
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      document.getElementById('countdown').textContent =
+      
+      document.getElementById('countdown').textContent = 
         `${hours} ساعة ${minutes} دقيقة ${seconds} ثانية`;
     }
 
+    // البحث عند الضغط على Enter
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') fetchData();
     });
-
-    // ✅ دوال التحكم في اللعب
-    function lockGame() {
-      fetch('/api/game/lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.ok
-        ? alert('🚫 قفلنا اللعب خلاص')
-        : alert('❌ فشل قفل اللعب'))
-      .catch(() => alert('⚠️ مشكلة في السيرفر'));
-    }
-
-    function startGame() {
-      fetch('/api/game/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.ok
-        ? alert('🎮 بدأنا اللعب يا باشا 💥')
-        : alert('❌ فشل في بدء اللعب'))
-      .catch(() => alert('⚠️ مشكلة في السيرفر'));
-    }
   </script>
 </body>
 </html>

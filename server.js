@@ -75,9 +75,9 @@ app.get('/api/users', checkAdmin, (req, res) => {
 app.get('/api/users/search', checkAdmin, (req, res) => {
   const { q } = req.query;
   if (!q) return res.json(users);
-  const filteredUsers = users.filter(user =>
-    user.id.includes(q) ||
-    user.name.toLowerCase().includes(q.toLowerCase())
+  const filteredUsers = users.filter(user => 
+    user.id.includes(q) || 
+    (user.name && user.name.toLowerCase().includes(q.toLowerCase()))
   );
   res.json(filteredUsers);
 });
@@ -122,24 +122,17 @@ app.delete('/api/users/:id', checkAdmin, (req, res) => {
   res.json({ message: 'تم حذف المستخدم بنجاح', user: deletedUser });
 });
 
-// 🔒 API لقفل اللعب
-app.post('/api/game/lock', checkAdmin, (req, res) => {
-  console.log("✅ تم قفل اللعب بواسطة الأدمن");
-  res.json({ message: 'تم قفل اللعب بنجاح' });
-});
-
-// 🎮 API لبدء اللعب
-app.post('/api/game/start', checkAdmin, (req, res) => {
-  console.log("🎮 تم بدء اللعب بواسطة الأدمن");
-  res.json({ message: 'تم بدء اللعب بنجاح' });
-});
-
 // Route لحماية الصفحات الإدارية
 app.get('/admin.html', checkAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// Route لصفحة البحث الرئيسية
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // بدء الخادم
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
