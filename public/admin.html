@@ -429,13 +429,12 @@
           <div class="form-row">
             <div>
               <label for="userRating">التقييم</label>
-              <input type="text" id="userRating" placeholder="أدخل التقييم (مثال: برونز، فضة، ذهب...)">
+              <input type="text" id="userRating" placeholder="أدخل التقييم">
             </div>
             <div>
               <label for="userCategory">التصنيف</label>
               <div class="category-input-container">
-                <input type="text" id="userCategory" placeholder="أدخل رقم، نسبة مئوية أو نص (مثال: 50 أو 50% أو جيد)">
-                <span class="category-type">رقم/نسبة/نص</span>
+                <input type="text" id="userCategory" placeholder="أدخل التصنيف">
               </div>
             </div>
           </div>
@@ -452,6 +451,9 @@
           <button class="btn btn-success" onclick="addUser()">إضافة مستخدم</button>
           <button class="btn btn-primary" onclick="updateUser()">تحديث البيانات</button>
           <button class="btn btn-danger" onclick="confirmDelete()">حذف المستخدم</button>
+          <button class="btn btn-danger" onclick="lockGame()">🔒 قفلنا لعب</button>
+          <button class="btn btn-success" onclick="startGame()">🎮 بدأنا لعب</button>
+
         </div>
         
         <div id="statusMessage" class="status-message"></div>
@@ -673,6 +675,29 @@
       });
     }
     
+function lockGame() {
+  fetch('/api/game/lock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.ok
+    ? showStatus('🚫 قفلنا اللعب خلاص يا كبير', 'error')
+    : showStatus('❌ فشل في قفل اللعب', 'error'))
+  .catch(() => showStatus('⚠️ السيرفر مطنشنا يا نجم', 'error'));
+}
+
+function startGame() {
+  fetch('/api/game/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.ok
+    ? showStatus('🎮 يلا نبدأ اللعب يا باشا 💥', 'success')
+    : showStatus('❌ معرفناش نبدأ اللعب', 'error'))
+  .catch(() => showStatus('⚠️ السيرفر بيكح 😅', 'error'));
+}
+
+
     // تحضير لحذف مستخدم
     function prepareDelete(userId) {
       selectedUserIdForDelete = userId;
@@ -749,6 +774,7 @@
     document.getElementById('searchUser').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchUser();
     });
+    
   </script>
 </body>
 </html>
