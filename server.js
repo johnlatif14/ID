@@ -77,7 +77,7 @@ app.get('/api/users/search', checkAdmin, (req, res) => {
   if (!q) return res.json(users);
   const filteredUsers = users.filter(user => 
     user.id.includes(q) || 
-    (user.name && user.name.toLowerCase().includes(q.toLowerCase()))
+    user.name.toLowerCase().includes(q.toLowerCase())
   );
   res.json(filteredUsers);
 });
@@ -125,11 +125,6 @@ app.delete('/api/users/:id', checkAdmin, (req, res) => {
 // Route لحماية الصفحات الإدارية
 app.get('/admin.html', checkAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// Route لصفحة البحث الرئيسية
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // بدء الخادم

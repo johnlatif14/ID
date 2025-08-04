@@ -144,34 +144,11 @@
       color: #d81b60;
       font-weight: bold;
     }
-    
-    .play-status {
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      font-weight: bold;
-      display: none;
-    }
-    
-    .play-status.playing {
-      background-color: #e8f5e9;
-      color: #2ecc71;
-      border: 2px solid #2ecc71;
-    }
-    
-    .play-status.stopped {
-      background-color: #ffebee;
-      color: #e74c3c;
-      border: 2px solid #e74c3c;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>بحث عن الحساب</h2>
-    
-    <div id="playStatus" class="play-status"></div>
     
     <select id="idSelector" class="id-selector">
       <option value="">اختر رقم ID</option>
@@ -183,26 +160,11 @@
       <button onclick="fetchData()">بحث</button>
     </div>
     
+
     <div id="result"></div>
   </div>
 
   <script>
-    // استقبال رسائل حالة اللعب من لوحة التحكم
-    window.addEventListener('message', function(event) {
-      if (event.data.type === 'playStatus') {
-        const playStatusEl = document.getElementById('playStatus');
-        
-        playStatusEl.style.display = 'block';
-        playStatusEl.textContent = event.data.message;
-        
-        if (event.data.isPlaying) {
-          playStatusEl.className = 'play-status playing';
-        } else {
-          playStatusEl.className = 'play-status stopped';
-        }
-      }
-    });
-
     // تحديث حقل البحث عند اختيار ID من القائمة
     document.getElementById('idSelector').addEventListener('change', function() {
       const searchInput = document.getElementById('searchInput');
