@@ -144,32 +144,14 @@
       color: #d81b60;
       font-weight: bold;
     }
-        body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
-      padding: 30px;
-      text-align: center;
-    }
-
-    input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      width: 250px;
-      border: 2px solid #ccc;
-      border-radius: 6px;
-    }
-
-    .warning-box {
-      margin-top: 20px;
-      background-color: #ffebee;
-      color: #c62828;
-      padding: 15px;
-      border: 2px solid #e53935;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 18px;
-      display: none;
-    }
+            .red-text {
+            color: red;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 50px;
+            font-family: Arial, sans-serif;
+        }
   </style>
 </head>
 <body>
@@ -185,7 +167,7 @@
       <input type="text" id="searchInput" placeholder="أدخل رقم ID للبحث" readonly>
       <button onclick="fetchData()">بحث</button>
     </div>
-
+    
 
     <div id="result"></div>
   </div>
@@ -270,8 +252,8 @@
             <span class="info-label">المتبقي للتوب 500:</span>
             <span class="remaining">${remainingToTop}</span>
           </div>
-          <div id="warningBox" class="warning-box">وقفنا لعب</div>
         </div>
+        <div class="red-text">وقفنا لعب</div>
         <div class="time-info">
           <div class="time-label">الوقت العالمي (UTC):</div>
           <div id="currentTime">${new Date().toUTCString()}</div>
@@ -305,14 +287,6 @@
     // البحث عند الضغط على Enter
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') fetchData();
-    });
-        document.getElementById('idInput').addEventListener('input', function () {
-      const warningBox = document.getElementById('warningBox');
-      if (this.value.trim() !== '') {
-        warningBox.style.display = 'block';
-      } else {
-        warningBox.style.display = 'none';
-      }
     });
   </script>
 </body>
